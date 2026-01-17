@@ -1,6 +1,6 @@
 # WiFi File Share
 
-A streamlined Flutter application for **macOS and Android** that allows you to share files instantly over your local WiFi network. No internet connection required—just drag, drop, and share.
+A streamlined Flutter application for **Windows, macOS, and Android** that allows you to share files instantly over your local WiFi network. No internet connection required—just drag, drop, and share.
 
 ## Overview
 
@@ -8,7 +8,7 @@ WiFi File Share turns your device into a local HTTP server, enabling you to shar
 
 ## Features
 
-- **🚀 Cross-Platform:** Works seamlessly on both macOS and Android.
+- **🚀 Cross-Platform:** Works seamlessly on Windows, macOS, and Android.
 - **📂 Flexible File Selection:**
     - **Desktop:** Drag & Drop support for quick sharing.
     - **Android:** Native file picker integration.
@@ -18,8 +18,8 @@ WiFi File Share turns your device into a local HTTP server, enabling you to shar
 
 ## Getting Started
 
-### macOS
-1.  **Launch the App:** Open WiFi File Share on your macOS device.
+### Desktop (Windows & macOS)
+1.  **Launch the App:** Open WiFi File Share on your computer.
 2.  **Connect to WiFi:** Ensure your computer and the receiving device are connected to the ***same*** WiFi network.
 3.  **Share Files:** Drag and drop files or use the "+" button.
 
@@ -40,7 +40,7 @@ The application starts a local HTTP server on port 8080 (or the next available p
 
 ## Tech Stack
 
-- **Framework:** Flutter (macOS & Android)
+- **Framework:** Flutter (Windows, macOS & Android)
 - **Server:** Dart `dart:io` HttpServer
 - **Dependencies:**
     - `desktop_drop` for drag-and-drop (Desktop).

@@ -1,5 +1,5 @@
-import 'dart:io';
 import 'dart:convert';
+import 'dart:typed_data'; // for Uint8List
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cross_file/cross_file.dart';
@@ -8,6 +8,7 @@ import '../../domain/entities/shared_file.dart';
 
 import '../../../../core/network/network_info.dart';
 import '../../../../core/server/local_file_server.dart';
+import '../../../../core/utils/files/file_helper.dart';
 
 // State class for Home
 class HomeState {
@@ -46,6 +47,7 @@ class HomeState {
 class HomeNotifier extends Notifier<HomeState> {
   LocalFileServer? _server;
   final NetworkInfoService _networkInfo = NetworkInfoService();
+  final FileHelper _fileHelper = FileHelper();
   static const _storageKey = 'shared_files_list';
 
   @override
@@ -62,7 +64,10 @@ class HomeNotifier extends Notifier<HomeState> {
   Future<void> _initServer() async {
     final ip = await _networkInfo.getLocalIpAddress();
     state = state.copyWith(serverIp: ip);
-    await startServer(); // Auto-start
+    // Auto-start only if IP is found (meaning likely supported)
+    if (ip != null) {
+      await startServer();
+    }
   }
 
   Future<void> _loadFiles() async {
@@ -75,7 +80,7 @@ class HomeNotifier extends Notifier<HomeState> {
         try {
           final map = jsonDecode(jsonStr);
           final file = SharedFile.fromJson(map);
-          if (File(file.path).existsSync()) {
+          if (await _fileHelper.exists(file.path)) {
             loadedFiles.add(file);
           }
         } catch (e) {
@@ -125,50 +130,7 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   Future<void> addFiles(List<XFile> files) async {
-    final newFiles = <SharedFile>[];
-
-    for (final file in files) {
-      final f = File(file.path);
-      if (FileSystemEntity.isDirectorySync(f.path)) {
-        // Recursive add
-        final dir = Directory(f.path);
-        // Use synchronous recursive listing or async stream
-        await for (final entity in dir.list(
-          recursive: true,
-          followLinks: false,
-        )) {
-          if (entity is File) {
-            final size = await entity.length();
-            // Maintain relative path structure in name for generic sharing
-            // ideally we'd use relative path from drop root, but for now simple recursion
-            // using generic name is safer to avoid collisions if we handle uniqueness later.
-            // But prompt says "Maintain folder structure in URLs".
-            // To do that, we need to know the 'root' of the drop.
-            // We'll use the relative path from the dropped directory.
-
-            String relativePath = entity.path.replaceFirst(dir.parent.path, '');
-            if (relativePath.startsWith(Platform.pathSeparator)) {
-              relativePath = relativePath.substring(1);
-            }
-            // Ensure URL friendly forward slashes
-            relativePath = relativePath.replaceAll(Platform.pathSeparator, '/');
-
-            newFiles.add(
-              SharedFile.fromPath(
-                path: entity.path,
-                name: relativePath,
-                size: size,
-              ),
-            );
-          }
-        }
-      } else {
-        final size = await file.length();
-        newFiles.add(
-          SharedFile.fromPath(path: file.path, name: file.name, size: size),
-        );
-      }
-    }
+    final newFiles = await _fileHelper.processFiles(files);
 
     state = state.copyWith(
       sharedFiles: [...state.sharedFiles, ...newFiles],
@@ -190,13 +152,37 @@ class HomeNotifier extends Notifier<HomeState> {
   }
 
   Future<void> pickFiles() async {
-    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
-    if (result != null) {
-      final xFiles = result.paths
-          .where((path) => path != null)
-          .map((path) => XFile(path!))
-          .toList();
-      addFiles(xFiles);
+    try {
+      final result = await FilePicker.platform.pickFiles(
+        allowMultiple: true,
+        withData: true, // Required to get bytes on Web
+      );
+
+      if (result != null) {
+        // Native: Prefer paths if available
+        if (result.paths.isNotEmpty && result.paths.any((p) => p != null)) {
+          final xFiles = result.paths
+              .where((path) => path != null)
+              .map((path) => XFile(path!))
+              .toList();
+          addFiles(xFiles);
+          return;
+        }
+
+        // Web: Paths are null, use bytes
+        if (result.files.isNotEmpty) {
+          final xFiles = result.files.map((f) {
+            return XFile.fromData(
+              f.bytes ?? Uint8List(0),
+              name: f.name,
+              length: f.size,
+            );
+          }).toList();
+          addFiles(xFiles);
+        }
+      }
+    } catch (e) {
+      print('Pick error: $e');
     }
   }
 }

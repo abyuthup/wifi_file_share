@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import '../../../../core/utils/platform_utils.dart';
 import '../providers/home_provider.dart';
 
 class ServerStatusWidget extends ConsumerWidget {
@@ -10,6 +11,19 @@ class ServerStatusWidget extends ConsumerWidget {
   Widget build(BuildContext context, WidgetRef ref) {
     final homeState = ref.watch(homeProvider);
     final notifier = ref.read(homeProvider.notifier);
+
+    if (PlatformUtils.isWeb) {
+      return Card(
+        elevation: 2,
+        margin: const EdgeInsets.all(16),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+        child: const ListTile(
+          leading: Icon(Icons.public, color: Colors.blue),
+          title: Text('Web Preview Mode'),
+          subtitle: Text('Hosting files is not supported in the browser.'),
+        ),
+      );
+    }
 
     final ip = homeState.serverIp ?? 'Unknown IP';
     final port = homeState.port;
