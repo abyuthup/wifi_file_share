@@ -60,6 +60,12 @@ class HomePage extends ConsumerWidget {
           ),
         ),
       ),
+      floatingActionButton: FloatingActionButton(
+        onPressed: () {
+          ref.read(homeProvider.notifier).pickFiles();
+        },
+        child: const Icon(Icons.add),
+      ),
     );
   }
 

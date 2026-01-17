@@ -3,6 +3,7 @@ import 'dart:convert';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:cross_file/cross_file.dart';
+import 'package:file_picker/file_picker.dart';
 import '../../domain/entities/shared_file.dart';
 
 import '../../../../core/network/network_info.dart';
@@ -186,6 +187,17 @@ class HomeNotifier extends Notifier<HomeState> {
   void clearFiles() {
     state = state.copyWith(sharedFiles: []);
     _saveFiles();
+  }
+
+  Future<void> pickFiles() async {
+    final result = await FilePicker.platform.pickFiles(allowMultiple: true);
+    if (result != null) {
+      final xFiles = result.paths
+          .where((path) => path != null)
+          .map((path) => XFile(path!))
+          .toList();
+      addFiles(xFiles);
+    }
   }
 }
 
