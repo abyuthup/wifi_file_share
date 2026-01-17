@@ -2,6 +2,8 @@
 
 A streamlined Flutter application for **Windows, macOS, iOS, and Android** that allows you to share files instantly over your local WiFi network. No internet connection required—just drag, drop, and share.
 
+![WiFi File Share Home Screen](screenshots/home_screen.png)
+
 ## Overview
 
 WiFi File Share turns your device into a local HTTP server, enabling you to share files with any device (phones, tablets, other computers) connected to the same network. It generates a unique link and QR code for each file, making transfer seamless.
